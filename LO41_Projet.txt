@@ -1,0 +1,24 @@
+LO41 Projet:
+
+Transformation de la viande:
+
+Ferme
+	Boeuf
+Abattoir
+	Steak hache cru
+Cuisine
+	Steak hache cuit
+Assemblage
+	Hamburger / assiette / etc
+
+
+Details techniques:
+
+Gestion par processus
+Un processus par ateliers: abattoir, cutine, assemblage
+Ressources: boeuf, steak hache cru, steak hache cuit, hamburger
+
+
+Transport du stock:
+
+Se fait par une file de fichiers et non pas juste par des signaux pour complexifier le schmilblick.
