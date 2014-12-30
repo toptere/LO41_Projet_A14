@@ -31,8 +31,8 @@ int NbOutput3 = 0;	// Nombre de produits en stock prets a etre expedies de l'ate
 
 
 void atelier2(int i){
-
-pthread_mutex_lock(&mutex);
+	printf("Demarrage atelier 2\n");
+	pthread_mutex_lock(&mutex);
 	while ( NbInput2 > 0 ){
 		pthread_mutex_unlock(&mutex);
 		
@@ -43,64 +43,64 @@ pthread_mutex_lock(&mutex);
 		}
 		pthread_mutex_unlock(&mutex);
 		
-		
 		/* Production */
 		pthread_mutex_lock(&mutex);
-		if ( NbInput2 < 10 ){
-			printf("L'atelier %d de niveau 2 produit.\n", (int) i);
-			//sleep(1);
+		if ( NbOutput2 < 10 ){
+			sleep(1);
 			NbInput2--;
 			NbOutput2++;
+			printf("L'atelier %d de niveau 2 produit. Input: %d Output: %d\n", (int) i, NbInput2, NbOutput2);
 		}
 		pthread_mutex_unlock(&mutex);
-		
 		
 		/* Expedition */
 		pthread_mutex_lock(&mutex);
 		if ( NbOutput2 >= 10 ){
 			pthread_cond_wait(&atelier1_2, &mutex);
-      NbOutput2 -= 10;
-      NbInput1 += 10;
+			printf("L'atelier %d de niveau 2 expedie un container.\n", (int) i);
+			NbOutput2 -= 10;
+			NbInput1 += 10;
 		}
 		pthread_mutex_unlock(&mutex);
 	}
-  pthread_mutex_unlock(&mutex);
+	pthread_mutex_unlock(&mutex);
+	printf("L'atelier %d de niveau 2 a epuise son stock.\n", (int) i);
 }
 
 
 
 void atelier1(int i) {
-
-pthread_mutex_lock(&mutex);
+	printf("Demarrage atelier 1\n");
+	pthread_mutex_lock(&mutex);
 	while ( NbInput1 > 0 ){
 		pthread_mutex_unlock(&mutex);
 
 
-	/* Verification stock input */
-	pthread_mutex_lock(&mutex);
-	if ( NbInput1 < 11 ){
-		pthread_cond_signal(&atelier1_2);
-	}
-	pthread_mutex_unlock(&mutex);
-
-	/* Production */
-	pthread_mutex_lock(&mutex);
-	//sleep(2);
-	NbInput1--;
-	NbOutput1++;
-	pthread_mutex_unlock(&mutex);
-	printf("L'atelier %d de niveau 1 produit. Input: %d Output: %d\n", (int) i, NbInput1, NbOutput1);
-  
-  /* Expedition */
-  pthread_mutex_lock(&mutex);
-  	if ( NbOutput1 >= 10 ){
-    	printf("L'atelier %d de niveau 1 expedie un container.\n", (int) i);
-      NbOutput1 -= 10;
-      NbOutput += 10;
-  }
-  pthread_mutex_unlock(&mutex);
-  
-	}
+		/* Verification stock input */
+		pthread_mutex_lock(&mutex);
+		if ( NbInput1 < 11 ){
+			pthread_cond_signal(&atelier1_2);
+		}
+		pthread_mutex_unlock(&mutex);
+		
+		/* Production */
+		pthread_mutex_lock(&mutex);
+		sleep(1);
+		NbInput1--;
+		NbOutput1++;
+		pthread_mutex_unlock(&mutex);
+		printf("L'atelier %d de niveau 1 produit. Input: %d Output: %d\n", (int) i, NbInput1, NbOutput1);
+  	
+  	/* Expedition */
+  	pthread_mutex_lock(&mutex);
+  		if ( NbOutput1 >= 10 ){
+  	  	printf("L'atelier %d de niveau 1 expedie un container.\n", (int) i);
+  	    NbOutput1 -= 10;
+  	    NbOutput += 10;
+  	}
+  	pthread_mutex_unlock(&mutex);
+  	
+		}
   printf("L'atelier %d de niveau 1 a epuise son stock.\n", (int) i);
 	pthread_mutex_unlock(&mutex);
 }
@@ -110,6 +110,7 @@ pthread_mutex_lock(&mutex);
 int main()
 {
   //creation des threads ateliers
+	
   pthread_create(tid,0,(void *(*)())atelier1,(void*)1);
   pthread_create(tid+1,0,(void *(*)())atelier2,(void*)2);
   //pthread_create(tid+2,0,(void *(*)())atelier3,(void*)3);
