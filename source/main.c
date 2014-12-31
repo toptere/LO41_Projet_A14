@@ -5,6 +5,7 @@
 #define NbAtelier1 1      //Nombre de processus symbolisant les ateliers 1
 #define NbAtelier2 1      //Nombre de processus symbolisant les ateliers 2
 #define NbAtelier3 1      //Nombre de processus symbolisant les ateliers 3
+#define TAILLE_CONTAINER 10	//Taille d'un container
 
 pthread_t tid[NbAtelier1+NbAtelier2+NbAtelier3+1];
 pthread_mutex_t mutex;
@@ -22,7 +23,7 @@ int NbOutput1 = 0;	// Nombre de produits en stock prets a etre expedies de l'ate
 
 // Atelier 2
 int NbInput2 = 20;	// Nombre de ressources en stock pour la production de l'atelier 2
-int NbOutput2 = 0;	// Nombre de produits en stock prets a etre expedies de l'atelier 2
+int NbOutput2 = 20;	// Nombre de produits en stock prets a etre expedies de l'atelier 2
 
 // Atelier 3
 int NbInput3 = 20;	// Nombre de ressources en stock pour la production de l'atelier 3
@@ -37,6 +38,7 @@ void atelier2(int i){
 		pthread_mutex_unlock(&mutex);
 		
 		/* Verification stock input */
+		// Unecessary for now
 		pthread_mutex_lock(&mutex);
 		if ( NbInput2 == 0 ){
 			printf("L'atelier %d de niveau 2 a epuise son stock.\n", (int) i);
@@ -45,7 +47,7 @@ void atelier2(int i){
 		
 		/* Production */
 		pthread_mutex_lock(&mutex);
-		if ( NbOutput2 < 10 ){
+		if ( NbOutput2 < TAILLE_CONTAINER ){
 			sleep(1);
 			NbInput2--;
 			NbOutput2++;
@@ -55,11 +57,11 @@ void atelier2(int i){
 		
 		/* Expedition */
 		pthread_mutex_lock(&mutex);
-		if ( NbOutput2 >= 10 ){
+		if ( NbOutput2 >= TAILLE_CONTAINER ){
 			pthread_cond_wait(&atelier1_2, &mutex);
 			printf("L'atelier %d de niveau 2 expedie un container.\n", (int) i);
-			NbOutput2 -= 10;
-			NbInput1 += 10;
+			NbOutput2 -= TAILLE_CONTAINER;
+			NbInput1 += TAILLE_CONTAINER;
 		}
 		pthread_mutex_unlock(&mutex);
 	}
@@ -78,7 +80,8 @@ void atelier1(int i) {
 
 		/* Verification stock input */
 		pthread_mutex_lock(&mutex);
-		if ( NbInput1 < 11 ){
+		if ( NbInput1 <= TAILLE_CONTAINER ){
+			printf("L'atelier %d de niveau 1 exige un autre container.\n", (int) i);
 			pthread_cond_signal(&atelier1_2);
 		}
 		pthread_mutex_unlock(&mutex);
@@ -93,10 +96,10 @@ void atelier1(int i) {
   	
   	/* Expedition */
   	pthread_mutex_lock(&mutex);
-  		if ( NbOutput1 >= 10 ){
+  		if ( NbOutput1 >= TAILLE_CONTAINER ){
   	  	printf("L'atelier %d de niveau 1 expedie un container.\n", (int) i);
-  	    NbOutput1 -= 10;
-  	    NbOutput += 10;
+  	    NbOutput1 -= TAILLE_CONTAINER;
+  	    NbOutput += TAILLE_CONTAINER;
   	}
   	pthread_mutex_unlock(&mutex);
   	
