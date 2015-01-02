@@ -171,7 +171,7 @@ int main(int argc, char *argv[], char *arge[])
 	args3.vitesse = SPEED_ATELIER_3;
 	pthread_create(tid+2,0,(void *(*)())atelier, (void *)&args3);
 	
-	//attend la fin de toutes les threads voitures
+	//attend la fin de toutes les threads ateliers
 	pthread_join(tid[0],NULL);
 	pthread_join(tid[1],NULL);
 	pthread_join(tid[2],NULL);
@@ -183,5 +183,12 @@ int main(int argc, char *argv[], char *arge[])
 	
 	
 	/* liberation des ressources");*/
+	pthread_mutex_destroy(&mutex0);
+	pthread_mutex_destroy(&mutex1);
+	pthread_mutex_destroy(&mutex2);
+	pthread_mutex_destroy(&mutex3);
+	pthread_cond_destroy(&atelier1_2);
+	pthread_cond_destroy(&atelier2_3);
+
 	exit(0);
 }
