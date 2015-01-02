@@ -25,96 +25,135 @@ typedef struct arguments_atelier {
 		unsigned int vitesse;
 };
 
+void mutex_lock(int niveau){
+		switch (niveau)
+	{
+		case 0:
+			pthread_mutex_lock(&mutex0);
+			break;
+		case 1:
+			pthread_mutex_lock(&mutex1);
+			break;
+		case 2:
+			pthread_mutex_lock(&mutex2);
+			break;
+		case 3:
+			pthread_mutex_lock(&mutex3);
+			break;
+	}
+}
+
+void mutex_unlock(int niveau){
+		switch (niveau)
+	{
+		case 0:
+			pthread_mutex_unlock(&mutex0);
+			break;
+		case 1:
+			pthread_mutex_unlock(&mutex1);
+			break;
+		case 2:
+			pthread_mutex_unlock(&mutex2);
+			break;
+		case 3:
+			pthread_mutex_unlock(&mutex3);
+			break;
+	}
+}
+
+void cond_signal(int niveau){
+		switch (niveau)
+	{
+		case 1:
+			pthread_cond_signal(&atelier1_2);
+			break;
+		case 2:
+			pthread_cond_signal(&atelier2_3);
+			break;
+	}
+}
+
+void cond_wait(int niveau){
+		switch (niveau)
+	{
+		case 2:
+			pthread_cond_wait(&atelier1_2, &mutex2);
+			break;
+		case 3:
+			pthread_cond_wait(&atelier2_3, &mutex3);
+			break;
+	}
+}
+
 void atelier(void *arguments){
 	
 	struct arguments_atelier *args = arguments;
-	
-	pthread_mutex_t mutex;
-	pthread_mutex_t mutex_nivsup;
-	pthread_cond_t cond;
-	switch (args->niveau)
-	{
-		case 1:
-			mutex = mutex1;
-			mutex_nivsup = mutex0;
-			break;
-		case 2:
-			mutex = mutex2;
-			mutex_nivsup = mutex1;
-			cond = atelier1_2;
-			break;
-		case 3:
-			mutex = mutex3;
-			mutex_nivsup = mutex2;
-			cond = atelier2_3;
-			break;
-	}
 	
 	int ressource_case = 2*(args->numero)-1;
 	
 	printf("Demarrage atelier numero: %d de niveau: %d utilisant la ressource de case: %d\n", (int) args->numero, (int) args->niveau, (int) ressource_case);
 	
-	bool signal_sent = false;		//Booleen marquant si un signal a deja ete envoye ou non
-	pthread_mutex_lock(&mutex);
+	bool signal_envoye = false;		//Booleen marquant si un signal a deja ete envoye ou non pour eviter de noyer la console
+	mutex_lock(args->niveau);
 	while ( ressources[ressource_case] > 0 ){
-		pthread_mutex_unlock(&mutex);
+		mutex_unlock(args->niveau);
 		
 		/* Verification stock input */
 		if ( args->niveau != NbNiveaux){	//Si l'atelier est au dernier niveau il ne demande pas de ressources et les consomme jusqu'a epuisement
-			pthread_mutex_lock(&mutex);
+			mutex_lock(args->niveau);
 			if ( ressources[ressource_case] <= TAILLE_CONTAINER ){
-				if (signal_sent == false){
-					pthread_mutex_unlock(&mutex);
+				mutex_unlock(args->niveau);
+				cond_signal(args->niveau);
+				if (signal_envoye == false){
 					printf("L'atelier %d de niveau %d exige un autre container.\n", (int) args->numero, (int) args->niveau);
-					pthread_cond_signal(&mutex);
-					signal_sent = true;
+					signal_envoye = true;
 				}
 			}
 			else{
-				signal_sent = false;
+				signal_envoye = false;
 			}
-			pthread_mutex_unlock(&mutex);
+			mutex_unlock(args->niveau);
 		}
 		
 		/* Production */
-		pthread_mutex_lock(&mutex);
+		mutex_lock(args->niveau);
 		if ( ressources[ressource_case+1] < TAILLE_CONTAINER ){
-			pthread_mutex_unlock(&mutex);
+			mutex_unlock(args->niveau);
 			sleep(args->vitesse);
-			pthread_mutex_lock(&mutex);
-			ressources[ressource_case]++;
-			ressources[ressource_case]++;
+			mutex_lock(args->niveau);
+			ressources[ressource_case]--;
+			ressources[ressource_case+1]++;
 			printf("L'atelier %d de niveau %d produit. Input: %d Output: %d\n", (int) args->numero, (int) args->niveau, ressources[ressource_case], ressources[ressource_case+1]);
 		}
-		pthread_mutex_unlock(&mutex);
+		mutex_unlock(args->niveau);
 		
 		/* Expedition */
-		pthread_mutex_lock(&mutex);
+		mutex_lock(args->niveau);
 		if ( ressources[ressource_case+1] >= TAILLE_CONTAINER ){
 			
 			if (args->niveau != 1 ){
-				pthread_cond_wait(&cond, &mutex); //Attente d'une demande de ressources de la part d'un atelier de niveau superieur
+				cond_wait(args->niveau); //Attente d'une demande de ressources de la part d'un atelier de niveau superieur
 				ressources[ressource_case+1] -= TAILLE_CONTAINER;
-				pthread_mutex_unlock(&mutex);
+				mutex_unlock(args->niveau);
 				
-				pthread_mutex_lock(&mutex_nivsup);
+				mutex_lock(args->niveau);
 				// TEMPORARY WORKAROUND!!! ONLY WORKS FOR 1 WORKSPACE PER LEVEL!!!
 				ressources[ressource_case-2] += TAILLE_CONTAINER;
-				pthread_mutex_unlock(&mutex_nivsup);
+				mutex_unlock(args->niveau);
 			}
 			else{	// Les ateliers de niveau 1 n'attendent pas d'ordre de niveaux superieurs et expedient immediatement
 				ressources[ressource_case+1] -= TAILLE_CONTAINER;
-				pthread_mutex_unlock(&mutex);
+				mutex_unlock(args->niveau);
 				
-				pthread_mutex_lock(&mutex_nivsup);
+				mutex_lock(args->niveau);
 				ressources[0] += TAILLE_CONTAINER;
-				pthread_mutex_unlock(&mutex_nivsup);
+				mutex_unlock(args->niveau);
 			}
 			printf("L'atelier %d de niveau %d a expedie un container.\n", (int) args->numero, (int) args->niveau);
 		}
-		pthread_mutex_unlock(&mutex);
+		mutex_unlock(args->niveau);
 	}
-	pthread_mutex_unlock(&mutex);
+	mutex_unlock(args->niveau);
 	printf("L'atelier %d de niveau %d a epuise son stock.\n", (int) args->numero, (int) args->niveau);
 }
 
