@@ -1,15 +1,19 @@
+#define _XOPEN_SOURCE
+
 #include <stdio.h>
+#include <unistd.h>
 #include <stdlib.h>
 #include <pthread.h>
 #include <stdbool.h>
+#include <signal.h>
 
 #define NbNiveaux 3					//Nombre de niveaux d'ateliers
 #define NbAtelier1 1				//Nombre de processus symbolisant les ateliers 1
 #define NbAtelier2 1				//Nombre de processus symbolisant les ateliers 2
 #define NbAtelier3 1				//Nombre de processus symbolisant les ateliers 3
 #define TAILLE_CONTAINER 10	//Taille d'un container
-#define SPEED_ATELIER_1 2		//Duree d'attente lors de la production pour les ateliers de niveau 1
-#define SPEED_ATELIER_2 1		//Duree d'attente lors de la production pour les ateliers de niveau 2
+#define SPEED_ATELIER_1 3		//Duree d'attente lors de la production pour les ateliers de niveau 1
+#define SPEED_ATELIER_2 2		//Duree d'attente lors de la production pour les ateliers de niveau 2
 #define SPEED_ATELIER_3 1		//Duree d'attente lors de la production pour les ateliers de niveau 3
 
 
@@ -17,6 +21,7 @@ pthread_t tid[NbAtelier1+NbAtelier2+NbAtelier3+1];
 pthread_mutex_t mutex0, mutex1, mutex2, mutex3;
 pthread_cond_t atelier1_2, atelier2_3;
 
+int nombre_threads_ateliers = 1;	// Par défaut il y a 1 thread donc 1 atelier par niveau
 int *ressources;
 
 typedef struct arguments_atelier {
@@ -24,6 +29,7 @@ typedef struct arguments_atelier {
 		unsigned int niveau;
 		unsigned int vitesse;
 };
+
 
 void mutex_lock(int niveau){
 		switch (niveau)
@@ -155,13 +161,52 @@ void atelier(void *arguments){
 	}
 	mutex_unlock(args->niveau);
 	printf("L'atelier %d de niveau %d a epuise son stock.\n", (int) args->numero, (int) args->niveau);
+	exit(0);
 }
 
+void liberation_ressources(){
+	/* liberation des ressources");*/
+	pthread_mutex_destroy(&mutex0);
+	pthread_mutex_destroy(&mutex1);
+	pthread_mutex_destroy(&mutex2);
+	pthread_mutex_destroy(&mutex3);
+	pthread_cond_destroy(&atelier1_2);
+	pthread_cond_destroy(&atelier2_3);
+}
 
+void traitantSIGINT(int num) {
 
+	printf("\n\nInteruption du programme!!!\n");
+	
+	// Envoyer au thread un signal pour qu'ils s'arretent
+	for ( int i = 0; i < nombre_threads_ateliers*3; i++)
+		pthread_cancel(tid[i]);
+	
+	for ( int i = 0; i < nombre_threads_ateliers*3 ; i++)
+		pthread_join(tid[i],NULL);
+	
+	// Presenter resume de l'etat des ressources
+	printf("Ressources actuelles:\n");
+	for ( int i = 1; i < (1 + 6*nombre_threads_ateliers) ; i++)
+		printf("\tRessources[%d] = %d\n", (int)i, (int)ressources[i]);
+	
+	pthread_mutex_lock(&mutex1);
+	printf("\nNombre de produits obtenue: %d\n\n",ressources[0]);
+	pthread_mutex_unlock(&mutex1);
+	
+	liberation_ressources();
+	
+	//signal(SIGINT, SIG_DFL);
+	
+	exit(0);
+}
 
 int main(int argc, char *argv[], char *arge[])
 {
+	/* Gestion des signaux */
+	// action.sa_handler = traitantSIGINT;
+	
+	signal(SIGINT,traitantSIGINT);
 	
 	/* Creation du tableau de ressources */
 	
@@ -176,7 +221,8 @@ int main(int argc, char *argv[], char *arge[])
 		default:
 			//Il faut 1 case pour les produits finis et 2 cases par atelier
 			// pour l'entree et la sortie sachant qu'il y a 3 niveaux
-			taille_ressources = 2 + 6*atoi(argv[1]);
+			nombre_threads_ateliers = atoi(argv[1]);
+			taille_ressources = 1 + 6*nombre_threads_ateliers;
 			break;
 	}
 	ressources = malloc(sizeof(int*)*taille_ressources);
@@ -216,18 +262,11 @@ int main(int argc, char *argv[], char *arge[])
 	pthread_join(tid[2],NULL);
 	
 	pthread_mutex_lock(&mutex1);
-	printf("Quantite de produits obtenue: %d\n",ressources[0]);
+	printf("Nombre de produits obtenue: %d\n\n",ressources[0]);
 	pthread_mutex_unlock(&mutex1);
 	
 	
-	
-	/* liberation des ressources");*/
-	pthread_mutex_destroy(&mutex0);
-	pthread_mutex_destroy(&mutex1);
-	pthread_mutex_destroy(&mutex2);
-	pthread_mutex_destroy(&mutex3);
-	pthread_cond_destroy(&atelier1_2);
-	pthread_cond_destroy(&atelier2_3);
+	liberation_ressources();
 
 	exit(0);
 }
