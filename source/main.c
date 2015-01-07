@@ -20,7 +20,7 @@ int *transfert_containers1_2, *transfert_containers2_3;		// Tableaux utilises po
 int *ressources;																					// Tableau contenant toutes les ressources des ateliers
 int SPEED_ATELIER [3] = {3, 2, 1};												// Duree d'attente lors de la production pour les ateliers de niveau 1, 2 et 3
 
-typedef struct arguments_atelier{
+struct arguments_atelier{
 		unsigned int numero;
 		unsigned int niveau;
 		unsigned int vitesse;
@@ -282,6 +282,27 @@ void traitantSIGINT(int num) {
 
 int main(int argc, char *argv[], char *arge[])
 {
+	int taille_ressources,res,entree;
+	switch(argc)
+	{
+		case 1:
+			//Par defaut, on cree 1 atelier par niveau
+			res = 0;
+			printf("Entrez un chiffre représentant le nombre d'atelier par niveau : \n");
+			res = scanf("%d", &entree);
+			if(res == 0){
+				printf("Vous n'avez pas suivie les instructions\n");
+				exit(0);
+			}
+			taille_ressources = 1 + 2*nombre_niveaux*entree;
+			break;
+		default:
+			//Il faut 1 case pour les produits finis et 2 cases par atelier
+			// pour l'entree et la sortie sachant qu'il y a 3 niveaux
+			nombre_ateliers_niveau = atoi(argv[1]);
+			taille_ressources = 1 + 2*nombre_niveaux*nombre_ateliers_niveau;
+			break;
+	}
 	/* Gestion des signaux */
 	
 	signal(SIGINT,traitantSIGINT);
@@ -299,20 +320,7 @@ int main(int argc, char *argv[], char *arge[])
 	
 	/* Creation des tableaux de ressources */
 	//Allocation de la taille du tableau
-	int taille_ressources;
-	switch(argc)
-	{
-		case 1:
-			//Par defaut, on cree 1 atelier par niveau
-			taille_ressources = 7;
-			break;
-		default:
-			//Il faut 1 case pour les produits finis et 2 cases par atelier
-			// pour l'entree et la sortie sachant qu'il y a 3 niveaux
-			nombre_ateliers_niveau = atoi(argv[1]);
-			taille_ressources = 1 + 2*nombre_niveaux*nombre_ateliers_niveau;
-			break;
-	}
+	
 	ressources = malloc(sizeof(int*)*taille_ressources);
 	
 	// Allocation des tableaux de transfert de containers a raison d'une case par ateliers
