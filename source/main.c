@@ -9,7 +9,6 @@
 
 #define nombre_niveaux 3					// Nombre de niveaux d'ateliers
 #define TAILLE_CONTAINER 10	// Taille d'un container
-#define SPEED_ATELIER [3] = {3, 2, 1}	// Duree d'attente lors de la production pour les ateliers de niveau 1, 2 et 3
 
 pthread_t *tid;
 pthread_mutex_t mutex0, mutex1, mutex2, mutex3, mutex1_2, mutex2_3;
@@ -18,6 +17,7 @@ pthread_cond_t atelier1_2, atelier2_3;
 int nombre_ateliers_niveau = 1;	// Par defaut il y a 1 thread donc 1 atelier par niveau
 int *transfert_containers1_2, *transfert_containers2_3;		// Tableaux utilises pour transferer les containers entre niveaux
 int *ressources;	// Tableau contenant toutes les ressources des ateliers
+int SPEED_ATELIER [3] = {3, 2, 1};	// Duree d'attente lors de la production pour les ateliers de niveau 1, 2 et 3
 
 typedef struct arguments_atelier {
 		unsigned int numero;
@@ -318,22 +318,25 @@ int main(int argc, char *argv[], char *arge[])
 	tid = malloc(sizeof(int*)*(nombre_ateliers_niveau*nombre_niveaux+1));
 	
 	//creation des threads ateliers
-	struct arguments_atelier args;
+
 
 	int numero=0;
 	for(int i=0;i<nombre_niveaux;i++)
 		for(int j=0;j<nombre_ateliers_niveau;j++){
-			numero = = j + i*nombre_ateliers_niveau + 1;
+			struct arguments_atelier args;
+			numero = j + i*nombre_ateliers_niveau + 1;
 			args.numero = numero;
 			args.niveau = 1;
 			args.vitesse = SPEED_ATELIER[i];
-			pthread_create(tid,numero,(void *(*)())atelier, (void *)&args);
+			pthread_create(tid[numero], numero,(void *(*)())atelier, (void *)&args);
 		}
 	
 	//attend la fin de toutes les threads ateliers
-	for(int i=0;i<nombre_niveaux;i++)
+	for(int i=0;i<nombre_niveaux;i++){
 		for(int j=0;j<nombre_ateliers_niveau;j++){
 			pthread_join(tid[j + i*nombre_ateliers_niveau + 1],NULL);
+		}
+	}
 	
 	// Vu que tous les autres threads ont ete tues, il n'est plus necessaire d'utiliser un mutex
 	printf("Nombre de produits obtenue: %d\n\n",ressources[0]);
