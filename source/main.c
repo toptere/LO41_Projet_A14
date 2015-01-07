@@ -7,14 +7,8 @@
 #include <stdbool.h>
 #include <signal.h>
 
-#define NbNiveaux 3					// Nombre de niveaux d'ateliers
-#define NbAtelier1 1				// Nombre de processus symbolisant les ateliers 1
-#define NbAtelier2 1				// Nombre de processus symbolisant les ateliers 2
-#define NbAtelier3 1				// Nombre de processus symbolisant les ateliers 3
+#define nombre_niveaux 3					// Nombre de niveaux d'ateliers
 #define TAILLE_CONTAINER 10	// Taille d'un container
-#define SPEED_ATELIER_1 3		// Duree d'attente lors de la production pour les ateliers de niveau 1
-#define SPEED_ATELIER_2 2		// Duree d'attente lors de la production pour les ateliers de niveau 2
-#define SPEED_ATELIER_3 1		// Duree d'attente lors de la production pour les ateliers de niveau 3
 #define SPEED_ATELIER [3] = {3, 2, 1}	// Duree d'attente lors de la production pour les ateliers de niveau 1, 2 et 3
 
 pthread_t *tid;
@@ -179,7 +173,7 @@ void atelier(void *arguments){
 		mutex_unlock(args->niveau);
 		
 		/* Verification stock input */
-		if ( args->niveau != NbNiveaux){	//Si l'atelier est au dernier niveau il ne demande pas de ressources et les consomme jusqu'a epuisement
+		if ( args->niveau != nombre_niveaux){	//Si l'atelier est au dernier niveau il ne demande pas de ressources et les consomme jusqu'a epuisement
 			mutex_lock(args->niveau);
 			if ( ressources[ressource_case] <= TAILLE_CONTAINER ){	// L'atelier demande des ressources s'il entame son dernier container
 				mutex_unlock(args->niveau);
@@ -297,7 +291,7 @@ int main(int argc, char *argv[], char *arge[])
 			//Il faut 1 case pour les produits finis et 2 cases par atelier
 			// pour l'entree et la sortie sachant qu'il y a 3 niveaux
 			nombre_ateliers_niveau = atoi(argv[1]);
-			taille_ressources = 1 + 2*NbNiveaux*nombre_ateliers_niveau;
+			taille_ressources = 1 + 2*nombre_niveaux*nombre_ateliers_niveau;
 			break;
 	}
 	ressources = malloc(sizeof(int*)*taille_ressources);
@@ -321,31 +315,25 @@ int main(int argc, char *argv[], char *arge[])
 		printf("\tRessources[%d] = %d\n", (int)i, (int)ressources[i]);
 	
 	//Allocation du tableau de tid
-	tid = malloc(sizeof(int*)*(nombre_ateliers_niveau*NbNiveaux+1));
+	tid = malloc(sizeof(int*)*(nombre_ateliers_niveau*nombre_niveaux+1));
 	
 	//creation des threads ateliers
-	struct arguments_atelier args1;
-	args1.numero = 1;
-	args1.niveau = 1;
-	args1.vitesse = SPEED_ATELIER_1;
-	pthread_create(tid,0,(void *(*)())atelier, (void *)&args1);
-	
-	struct arguments_atelier args2;
-	args2.numero = 2;
-	args2.niveau = 2;
-	args2.vitesse = SPEED_ATELIER_2;
-	pthread_create(tid+1,0,(void *(*)())atelier, (void *)&args2);
-	
-	struct arguments_atelier args3;
-	args3.numero = 3;
-	args3.niveau = 3;
-	args3.vitesse = SPEED_ATELIER_3;
-	pthread_create(tid+2,0,(void *(*)())atelier, (void *)&args3);
+	struct arguments_atelier args;
+
+	int numero=0;
+	for(int i=0;i<nombre_niveaux;i++)
+		for(int j=0;j<nombre_ateliers_niveau;j++){
+			numero = = j + i*nombre_ateliers_niveau + 1;
+			args.numero = numero;
+			args.niveau = 1;
+			args.vitesse = SPEED_ATELIER[i];
+			pthread_create(tid,numero,(void *(*)())atelier, (void *)&args);
+		}
 	
 	//attend la fin de toutes les threads ateliers
-	pthread_join(tid[0],NULL);
-	pthread_join(tid[1],NULL);
-	pthread_join(tid[2],NULL);
+	for(int i=0;i<nombre_niveaux;i++)
+		for(int j=0;j<nombre_ateliers_niveau;j++){
+			pthread_join(tid[j + i*nombre_ateliers_niveau + 1],NULL);
 	
 	// Vu que tous les autres threads ont ete tues, il n'est plus necessaire d'utiliser un mutex
 	printf("Nombre de produits obtenue: %d\n\n",ressources[0]);
