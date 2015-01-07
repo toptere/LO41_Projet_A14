@@ -8,9 +8,6 @@
 #include <signal.h>
 
 #define NbNiveaux 3					//Nombre de niveaux d'ateliers
-#define NbAtelier1 1				//Nombre de processus symbolisant les ateliers 1
-#define NbAtelier2 1				//Nombre de processus symbolisant les ateliers 2
-#define NbAtelier3 1				//Nombre de processus symbolisant les ateliers 3
 #define TAILLE_CONTAINER 10	//Taille d'un container
 #define SPEED_ATELIER_1 3		//Duree d'attente lors de la production pour les ateliers de niveau 1
 #define SPEED_ATELIER_2 2		//Duree d'attente lors de la production pour les ateliers de niveau 2
@@ -326,28 +323,22 @@ int main(int argc, char *argv[], char *arge[])
 	imprimer_container(3);
 	
 	//creation des threads ateliers
-	struct arguments_atelier args1;
-	args1.numero = 1;
-	args1.niveau = 1;
-	args1.vitesse = SPEED_ATELIER_1;
-	pthread_create(tid,0,(void *(*)())atelier, (void *)&args1);
-	
-	struct arguments_atelier args2;
-	args2.numero = 2;
-	args2.niveau = 2;
-	args2.vitesse = SPEED_ATELIER_2;
-	pthread_create(tid+1,0,(void *(*)())atelier, (void *)&args2);
-	
-	struct arguments_atelier args3;
-	args3.numero = 3;
-	args3.niveau = 3;
-	args3.vitesse = SPEED_ATELIER_3;
-	pthread_create(tid+2,0,(void *(*)())atelier, (void *)&args3);
+	struct arguments_atelier args;
+
+	int numero=0;
+	for(int i=0;i<NbNiveaux;i++)
+		for(int j=0;j<nombre_ateliers_niveau;j++){
+			numero = = j + i*nombre_ateliers_niveau + 1;
+			args.numero = numero;
+			args.niveau = 1;
+			args.vitesse = SPEED_ATELIER[i];
+			pthread_create(tid,numero,(void *(*)())atelier, (void *)&args);
+		}
 	
 	//attend la fin de toutes les threads ateliers
-	pthread_join(tid[0],NULL);
-	pthread_join(tid[1],NULL);
-	pthread_join(tid[2],NULL);
+	for(int i=0;i<NbNiveaux;i++)
+		for(int j=0;j<nombre_ateliers_niveau;j++){
+			pthread_join(tid[j + i*nombre_ateliers_niveau + 1],NULL);
 	
 	// Vu que tous les autres threads ont ete tues, il n'est plus necessaire d'utiliser un mutex
 	printf("Nombre de produits obtenue: %d\n\n",ressources[0]);
