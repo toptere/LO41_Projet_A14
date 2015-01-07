@@ -7,20 +7,20 @@
 #include <stdbool.h>
 #include <signal.h>
 
-#define nombre_niveaux 3					// Nombre de niveaux d'ateliers
-#define TAILLE_CONTAINER 10	// Taille d'un container
+#define nombre_niveaux 3			// Nombre de niveaux d'ateliers
+#define TAILLE_CONTAINER 10		// Taille d'un container
 
 pthread_t *tid;
 pthread_mutexattr_t attr;
-pthread_mutex_t mutex, mutex0, mutex1, mutex2, mutex3, mutex1_2, mutex2_3;
+pthread_mutex_t mutex_start, mutex0, mutex1, mutex2, mutex3, mutex1_2, mutex2_3;
 pthread_cond_t atelier1_2, atelier2_3, start;
 
-int nombre_ateliers_niveau = 1;	// Par defaut il y a 1 thread donc 1 atelier par niveau
+int nombre_ateliers_niveau = 1;														// Par defaut il y a 1 thread donc 1 atelier par niveau
 int *transfert_containers1_2, *transfert_containers2_3;		// Tableaux utilises pour transferer les containers entre niveaux
-int *ressources;	// Tableau contenant toutes les ressources des ateliers
-int SPEED_ATELIER [3] = {3, 2, 1};	// Duree d'attente lors de la production pour les ateliers de niveau 1, 2 et 3
+int *ressources;																					// Tableau contenant toutes les ressources des ateliers
+int SPEED_ATELIER [3] = {3, 2, 1};												// Duree d'attente lors de la production pour les ateliers de niveau 1, 2 et 3
 
-typedef struct arguments_atelier {
+typedef struct arguments_atelier{
 		unsigned int numero;
 		unsigned int niveau;
 		unsigned int vitesse;
@@ -87,6 +87,7 @@ void cond_wait(int niveau){
 	}
 }
 
+// Imprime l'etat d'un tableau transfert_container et qui l'a appele
 void imprimer_container(int numero, int niveau){
 	switch (niveau)
 	{
@@ -109,6 +110,7 @@ void imprimer_container(int numero, int niveau){
 	}
 }
 
+// Parcourir un tableau transfert_container pour trouver un container et le prendre
 bool recuperer_container(int numero, int niveau){
 	switch (niveau)
 	{
@@ -140,6 +142,7 @@ bool recuperer_container(int numero, int niveau){
 	return false;
 }
 
+// Mettre un container dans un tableau transfert_container
 void transferer_container(int numero, int niveau){
 	switch (niveau)
 	{
@@ -158,6 +161,7 @@ void transferer_container(int numero, int niveau){
 	}
 }
 
+
 void atelier(void *arguments){
 	
 	struct arguments_atelier *args = arguments;
@@ -170,9 +174,9 @@ void atelier(void *arguments){
 	printf("Demarrage atelier numero: %d de niveau: %d utilisant la ressource de case: %d\n", (int) numero, (int) niveau, (int) ressource_case);
 	
 	// L'atelier attend la creation des autres threads
-	pthread_mutex_lock(&mutex);
-	pthread_cond_wait(&start, &mutex);
-	pthread_mutex_unlock(&mutex);
+	pthread_mutex_lock(&mutex_start);
+	pthread_cond_wait(&start, &mutex_start);
+	pthread_mutex_unlock(&mutex_start);
 	
 	bool signal_envoye = false;		//Booleen marquant si un signal a deja ete envoye ou non pour eviter de noyer la console
 	mutex_lock(niveau);
@@ -184,7 +188,6 @@ void atelier(void *arguments){
 		if ( niveau != nombre_niveaux){	//Si l'atelier est au dernier niveau il ne demande pas de ressources et les consomme jusqu'a epuisement
 			mutex_lock(niveau);
 			if ( ressources[ressource_case] <= TAILLE_CONTAINER ){	// L'atelier demande des ressources s'il entame son dernier container
-//				mutex_unlock(niveau);
 				cond_signal(niveau);	// On renvoit le signal a chaque iteration au cas ou aucun atelier de niveau inferieur n'etait pret a expedier un container
 				if (signal_envoye == false){
 					printf("L'atelier %d de niveau %d exige un autre container.\n", (int) numero, (int) niveau);
@@ -192,9 +195,7 @@ void atelier(void *arguments){
 				}
 				else if(recuperer_container(numero, niveau)){
 					printf("L'atelier %d de niveau %d receptionne un container.\n", (int) numero, (int) niveau);
-//					mutex_lock(niveau);
 					ressources[ressource_case] += TAILLE_CONTAINER;
-//					mutex_unlock(niveau);
 				}
 			}
 			else{
@@ -222,13 +223,11 @@ void atelier(void *arguments){
 			if (niveau != 1 ){
 				cond_wait(niveau); //Attente d'une demande de ressources de la part d'un atelier de niveau superieur
 				ressources[ressource_case+1] -= TAILLE_CONTAINER;
-//				mutex_unlock(niveau);
 				
 				transferer_container(numero, niveau);
 			}
 			else{	// Les ateliers de niveau 1 n'attendent pas d'ordre de niveaux superieurs et expedient immediatement
 				ressources[ressource_case+1] -= TAILLE_CONTAINER;
-//				mutex_unlock(niveau);
 				
 				mutex_lock(0);
 				ressources[0] += TAILLE_CONTAINER;	// Expedition vers la case des produits finis
@@ -238,13 +237,12 @@ void atelier(void *arguments){
 		}
 		mutex_unlock(niveau);
 	}
-//	mutex_unlock(niveau);
 	printf("L'atelier %d de niveau %d a epuise son stock.\n", (int) numero, (int) niveau);
 }
 
 void liberation_ressources(){
 	/* liberation des ressources */
-	pthread_mutex_destroy(&mutex);
+	pthread_mutex_destroy(&mutex_start);
 	pthread_mutex_destroy(&mutex0);
 	pthread_mutex_destroy(&mutex1);
 	pthread_mutex_destroy(&mutex2);
@@ -256,6 +254,7 @@ void liberation_ressources(){
 	pthread_cond_destroy(&atelier2_3);
 }
 
+// Demande l'arret des threads ateliers et imprime le tableau des ressources
 void traitantSIGINT(int num) {
 
 	printf("\n\nInteruption du programme!!!\n");
@@ -290,7 +289,7 @@ int main(int argc, char *argv[], char *arge[])
 	/*Initialisation des mutex*/
 	pthread_mutexattr_init(&attr);
 	pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_ERRORCHECK);
-	pthread_mutex_init(&mutex, &attr);
+	pthread_mutex_init(&mutex_start, &attr);
 	pthread_mutex_init(&mutex0, &attr);
 	pthread_mutex_init(&mutex1, &attr);
 	pthread_mutex_init(&mutex2, &attr);
@@ -329,12 +328,6 @@ int main(int argc, char *argv[], char *arge[])
 	//Chaque atelier commence avec 2 containers de ressources
 	for ( int i = 1; i < taille_ressources ; i += 2)
 		ressources[i] = 2*TAILLE_CONTAINER;
-	
-	/*
-	printf("Ressources de depart:\n");
-	for ( int i = 0; i < taille_ressources ; i++)
-		printf("\tRessources[%d] = %d\n", (int)i, (int)ressources[i]);
-	*/
 	
 	//Allocation du tableau de tid
 	tid = malloc(sizeof(int*)*(nombre_ateliers_niveau*nombre_niveaux+1));
