@@ -7,17 +7,17 @@
 #include <stdbool.h>
 #include <signal.h>
 
-#define NbNiveaux 3					//Nombre de niveaux d'ateliers
-#define NbAtelier1 1				//Nombre de processus symbolisant les ateliers 1
-#define NbAtelier2 1				//Nombre de processus symbolisant les ateliers 2
-#define NbAtelier3 1				//Nombre de processus symbolisant les ateliers 3
-#define TAILLE_CONTAINER 10	//Taille d'un container
-#define SPEED_ATELIER_1 3		//Duree d'attente lors de la production pour les ateliers de niveau 1
-#define SPEED_ATELIER_2 2		//Duree d'attente lors de la production pour les ateliers de niveau 2
-#define SPEED_ATELIER_3 1		//Duree d'attente lors de la production pour les ateliers de niveau 3
+#define NbNiveaux 3					// Nombre de niveaux d'ateliers
+#define NbAtelier1 1				// Nombre de processus symbolisant les ateliers 1
+#define NbAtelier2 1				// Nombre de processus symbolisant les ateliers 2
+#define NbAtelier3 1				// Nombre de processus symbolisant les ateliers 3
+#define TAILLE_CONTAINER 10	// Taille d'un container
+#define SPEED_ATELIER_1 3		// Duree d'attente lors de la production pour les ateliers de niveau 1
+#define SPEED_ATELIER_2 2		// Duree d'attente lors de la production pour les ateliers de niveau 2
+#define SPEED_ATELIER_3 1		// Duree d'attente lors de la production pour les ateliers de niveau 3
+#define SPEED_ATELIER [3] = {3, 2, 1}	// Duree d'attente lors de la production pour les ateliers de niveau 1, 2 et 3
 
-
-pthread_t tid[NbAtelier1+NbAtelier2+NbAtelier3+1];
+pthread_t *tid;
 pthread_mutex_t mutex0, mutex1, mutex2, mutex3, mutex1_2, mutex2_3;
 pthread_cond_t atelier1_2, atelier2_3;
 
@@ -129,7 +129,6 @@ bool recuperer_container(int numero, int niveau){
 			}
 			pthread_mutex_unlock(&mutex1_2);
 			imprimer_container(niveau);
-			return false;
 			break;
 		case 2:
 			pthread_mutex_lock(&mutex2_3);
@@ -143,10 +142,9 @@ bool recuperer_container(int numero, int niveau){
 			}
 			pthread_mutex_unlock(&mutex2_3);
 			imprimer_container(niveau);
-			return false;
 			break;
 	}
-	return false;	// Ligne de code theoriquement inattaignable mais rajoutee par securite
+	return false;
 }
 
 void transferer_container(int numero, int niveau){
@@ -299,7 +297,7 @@ int main(int argc, char *argv[], char *arge[])
 			//Il faut 1 case pour les produits finis et 2 cases par atelier
 			// pour l'entree et la sortie sachant qu'il y a 3 niveaux
 			nombre_ateliers_niveau = atoi(argv[1]);
-			taille_ressources = 1 + 6*nombre_ateliers_niveau;
+			taille_ressources = 1 + 2*NbNiveaux*nombre_ateliers_niveau;
 			break;
 	}
 	ressources = malloc(sizeof(int*)*taille_ressources);
@@ -322,8 +320,8 @@ int main(int argc, char *argv[], char *arge[])
 	for ( int i = 0; i < taille_ressources ; i++)
 		printf("\tRessources[%d] = %d\n", (int)i, (int)ressources[i]);
 	
-	imprimer_container(2);
-	imprimer_container(3);
+	//Allocation du tableau de tid
+	tid = malloc(sizeof(int*)*(nombre_ateliers_niveau*NbNiveaux+1));
 	
 	//creation des threads ateliers
 	struct arguments_atelier args1;
