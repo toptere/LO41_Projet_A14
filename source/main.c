@@ -328,7 +328,7 @@ int main(int argc, char *argv[], char *arge[])
 			args.numero = numero;
 			args.niveau = 1;
 			args.vitesse = SPEED_ATELIER[i];
-			pthread_create(tid[numero], numero,(void *(*)())atelier, (void *)&args);
+			pthread_create(tid + numero, 0,(void *(*)())atelier, (void *)&args);
 		}
 	
 	//attend la fin de toutes les threads ateliers
