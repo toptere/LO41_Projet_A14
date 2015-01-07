@@ -1,0 +1,47 @@
+Ressources de depart:
+	Ressources[0] = 0
+	Ressources[1] = 20
+	Ressources[2] = 0
+	Ressources[3] = 20
+	Ressources[4] = 0
+	Ressources[5] = 20
+	Ressources[6] = 0
+Demarrage atelier numero: 2 de niveau: 1 utilisant la ressource de case: 3
+Demarrage atelier numero: 3 de niveau: 1 utilisant la ressource de case: 5
+Demarrage atelier numero: 3 de niveau: 1 utilisant la ressource de case: 5
+L'atelier 3 de niveau 1 produit. Input: 19 Output: 1
+L'atelier 3 de niveau 1 produit. Input: 18 Output: 2
+L'atelier 3 de niveau 1 produit. Input: 19 Output: 1
+L'atelier 3 de niveau 1 produit. Input: 17 Output: 3
+L'atelier 3 de niveau 1 produit. Input: 16 Output: 4
+L'atelier 3 de niveau 1 produit. Input: 18 Output: 2
+L'atelier 3 de niveau 1 produit. Input: 15 Output: 5
+L'atelier 3 de niveau 1 produit. Input: 14 Output: 6
+L'atelier 3 de niveau 1 produit. Input: 17 Output: 3
+L'atelier 3 de niveau 1 produit. Input: 13 Output: 7
+L'atelier 3 de niveau 1 produit. Input: 12 Output: 8
+L'atelier 3 de niveau 1 produit. Input: 16 Output: 4
+L'atelier 3 de niveau 1 produit. Input: 11 Output: 9
+L'atelier 3 de niveau 1 produit. Input: 10 Output: 10
+L'atelier 3 de niveau 1 a expedie un container.
+L'atelier 3 de niveau 1 exige un autre container.
+L'atelier 3 de niveau 1 exige un autre container.
+L'atelier 3 de niveau 1 produit. Input: 9 Output: 1
+L'atelier 3 de niveau 1 produit. Input: 8 Output: 2
+L'atelier 3 de niveau 1 produit. Input: 15 Output: 5
+L'atelier 3 de niveau 1 produit. Input: 14 Output: 6
+L'atelier 3 de niveau 1 produit. Input: 7 Output: 3
+L'atelier 3 de niveau 1 produit. Input: 6 Output: 4
+
+
+Interuption du programme!!!
+Ressources actuelles:
+	Ressources[1] = 20
+	Ressources[2] = 0
+	Ressources[3] = 14
+	Ressources[4] = 6
+	Ressources[5] = 6
+	Ressources[6] = 4
+
+Nombre de produits obtenue: 10
+

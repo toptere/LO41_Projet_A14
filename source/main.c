@@ -164,6 +164,8 @@ void atelier(void *arguments){
 	struct arguments_atelier *args = arguments;
 	
 	int ressource_case = 2*(args->numero)-1;
+	int numero = args->numero;
+	int niveau = args->niveau;
 	
 	printf("Demarrage atelier numero: %d de niveau: %d utilisant la ressource de case: %d\n", (int) args->numero, (int) args->niveau, (int) ressource_case);
 	
@@ -172,26 +174,36 @@ void atelier(void *arguments){
 	while ( ressources[ressource_case] > 0 ){
 		mutex_unlock(args->niveau);
 		
+		printf("Toto %d.%d  1\n", (int) args->numero, (int) args->niveau);
+		
 		/* Verification stock input */
 		if ( args->niveau != nombre_niveaux){	//Si l'atelier est au dernier niveau il ne demande pas de ressources et les consomme jusqu'a epuisement
 			mutex_lock(args->niveau);
+			printf("Toto %d.%d  1.1\n", (int) args->numero, (int) args->niveau);
 			if ( ressources[ressource_case] <= TAILLE_CONTAINER ){	// L'atelier demande des ressources s'il entame son dernier container
+				printf("Toto %d.%d  1.1.1\n", (int) args->numero, (int) args->niveau);
 				mutex_unlock(args->niveau);
 				cond_signal(args->niveau);	// On renvoit le signal a chaque iteration au cas ou aucun atelier de niveau inferieur n'etait pret a expedier un container
+				printf("Toto %d.%d  1.1.2\n", (int) args->numero, (int) args->niveau);
 				if (signal_envoye == false){
 					printf("L'atelier %d de niveau %d exige un autre container.\n", (int) args->numero, (int) args->niveau);
 					signal_envoye = true;
+					printf("Toto %d.%d  1.1.2.1\n", (int) args->numero, (int) args->niveau);
 				}
 				else if(recuperer_container(args->numero, args->niveau)){
+					printf("Toto %d.%d  1.1.3\n", (int) args->numero, (int) args->niveau);
 					mutex_lock(args->niveau);
 					ressources[ressource_case] += TAILLE_CONTAINER;
 					mutex_unlock(args->niveau);
+					printf("Toto %d.%d  1.1.4\n", (int) args->numero, (int) args->niveau);
 				}
 			}
 			else{
 				signal_envoye = false;
+				printf("Toto %d.%d  1.1.5\n", (int) args->numero, (int) args->niveau);
 			}
 			mutex_unlock(args->niveau);
+			printf("Toto %d.%d  1.2\n", (int) args->numero, (int) args->niveau);
 		}
 		
 		/* Production */
@@ -326,9 +338,11 @@ int main(int argc, char *argv[], char *arge[])
 			struct arguments_atelier args;
 			numero = j + i*nombre_ateliers_niveau + 1;
 			args.numero = numero;
-			args.niveau = 1;
+			args.niveau = i+1;
 			args.vitesse = SPEED_ATELIER[i];
+			printf("Valeurs args: %d %d %d\n", (int)args.numero, (int)args.niveau, (int)args.vitesse);
 			pthread_create(tid + numero, 0,(void *(*)())atelier, (void *)&args);
+			sleep(1);
 		}
 	
 	//attend la fin de toutes les threads ateliers
