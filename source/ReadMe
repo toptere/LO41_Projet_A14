@@ -1,0 +1,8 @@
+Etape 1 :
+	Lancez le make avec une console
+Etape 2 :
+	Lancez le programme grâce à a commande ./Programme
+	- Si un argument de type int (>0) est precisé, celui ci correspondra au nombre d'atelier créé
+	- Si aucun arguments n'est précisé, une interface vous demandera de saisir le nombre d'atelier désiré
+Etape 3 :
+	Enjoy!
